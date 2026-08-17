@@ -1,0 +1,37 @@
+{% extends "base.html" %} {% block title %}Answer{% endblock %} {% block
+bodyclass %}vote{% endblock %} {% block content %}
+<main class="card">
+  <form id="join-form" class="stack">
+    <h1>Class poll</h1>
+    {% if running %}
+    <label>
+      Code
+      <input
+        id="code"
+        inputmode="numeric"
+        autocomplete="off"
+        required
+        maxlength="12"
+        placeholder="shown on the screen"
+      />
+    </label>
+    <button type="submit" class="primary">Join</button>
+    <p class="fine">Answers are anonymous. No name, no sign-in.</p>
+    {% else %}
+    <p class="fine">
+      No poll is running right now. Leave this page open and reload it when your
+      instructor puts a question up.
+    </p>
+    {% endif %}
+  </form>
+
+  <div id="live" hidden>
+    <p class="counter" id="counter"></p>
+    <h1 class="q-text" id="q-text">Waiting for the first question…</h1>
+    <div id="input"></div>
+    <p id="status" class="status" role="status"></p>
+  </div>
+</main>
+{% endblock %} {% block scripts %}
+<script src="/static/vote.js"></script>
+{% endblock %}

@@ -1,0 +1,638 @@
+:root {
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --accent: #1d4ed8;
+  --gold: #fbbf24;
+  --good: #22c55e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0.5rem 0.9rem;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* --- student ------------------------------------------------------------ */
+
+body.vote {
+  background: #f8fafc;
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 1rem 4rem;
+}
+
+.card {
+  width: min(30rem, 100%);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.5rem;
+}
+
+.card h1 {
+  margin: 0 0 0.4rem;
+  font-size: 1.3rem;
+  line-height: 1.3;
+}
+
+.card input[type="text"],
+.card input:not([type]),
+.card input[type="number"] {
+  font: inherit;
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.fine {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.counter {
+  margin: 0 0 0.3rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.status {
+  margin: 1rem 0 0;
+  min-height: 1.5em;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.status.done {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.status.bad {
+  color: #b91c1c;
+}
+
+/* answer controls */
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  font-size: 1.05rem;
+}
+
+.choice.picked {
+  border-color: var(--accent);
+  background: #eff6ff;
+  font-weight: 600;
+}
+
+.choice.correct {
+  border-color: var(--good);
+  background: #f0fdf4;
+}
+
+.choice .letter {
+  flex: none;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.scale-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.scale-row button {
+  flex: 1;
+  padding: 1.1rem 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border: 2px solid var(--line);
+}
+
+.scale-row button.picked {
+  border-color: var(--accent);
+  background: #eff6ff;
+  color: var(--accent);
+}
+
+.scale-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
+}
+
+.rank-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rank-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+}
+
+.rank-list .pos {
+  flex: none;
+  font-weight: 700;
+  color: var(--muted);
+  width: 1.4rem;
+}
+
+.rank-list .label {
+  flex: 1;
+}
+
+.rank-list button {
+  padding: 0.2rem 0.5rem;
+  line-height: 1;
+}
+
+/* --- display ------------------------------------------------------------ */
+
+body.display {
+  background: #0f172a;
+  color: #e2e8f0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#stage {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* The control bar is fixed to the bottom, so keep the room's content clear
+     of it rather than letting a mean or a legend hide underneath. */
+  padding: 3vh 4vw 4.6rem;
+}
+
+.join {
+  margin: auto;
+  text-align: center;
+}
+
+.deck-title {
+  margin: 0 0 2rem;
+  font-size: clamp(1.4rem, 3vw, 2.6rem);
+  color: #fff;
+}
+
+.join-lead {
+  margin: 0;
+  color: #94a3b8;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+}
+
+.join-url {
+  margin: 0.3rem 0 1rem;
+  font-size: clamp(1rem, 2.1vw, 1.8rem);
+  font-weight: 700;
+  color: #fff;
+  word-break: break-all;
+}
+
+.join-code {
+  margin: 0.2rem 0 1.2rem;
+  font-size: clamp(1.3rem, 2.5vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  line-height: 1;
+}
+
+/* The QR is what students actually use, so it gets the room. The URL and the
+   code are the fallback for someone who can't scan, and they only have to be
+   readable, not commanding.
+
+   Half the screen height, rather than a fixed ceiling in rem: a rem cap looks
+   generous while authoring on a laptop and turns into a postage stamp on a
+   1920-wide projector. Sizing off vh rather than vw is also what keeps it from
+   pushing the code off the bottom; the vw term only binds on a screen too
+   narrow for half its height to fit across. */
+.join-qr {
+  width: min(50vh, 42vw);
+  height: min(50vh, 42vw);
+  min-width: 11rem;
+  min-height: 11rem;
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.6rem;
+}
+
+.here {
+  margin: 1.2rem 0 0;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* Only shown when the join screen has been summoned back over a live question,
+   so a latecomer knows there is something to answer the moment they are in. */
+.join-live {
+  margin: 0.6rem 0 0;
+  color: var(--gold);
+  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+}
+
+.asked {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.asked .counter {
+  color: #64748b;
+}
+
+/* Scoped to the projector: the student page uses the same class on its own
+   heading, and white-on-white makes the question vanish. */
+body.display .q-text {
+  margin: 0 0 3vh;
+  font-size: clamp(1.5rem, 3.4vw, 3rem);
+  line-height: 1.2;
+  color: #fff;
+}
+
+.results {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.waiting {
+  margin: auto;
+  text-align: center;
+  font-size: clamp(2rem, 7vw, 6rem);
+  font-weight: 800;
+  color: #475569;
+}
+
+/* the question menu
+
+   Every prepared question at once, so the instructor can take the one the
+   discussion actually reached for. It goes over the question rather than
+   replacing it: voting stays open underneath and nothing is disturbed by
+   looking. */
+
+.menu {
+  margin: auto;
+  width: min(100%, 60rem);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.menu-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.menu-item {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr auto;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #1e293b;
+  border-radius: 0.6rem;
+  cursor: pointer;
+  background: #131f37;
+}
+
+.menu-item:hover {
+  border-color: #475569;
+  background: #1a2947;
+}
+
+/* Where the room is now, and where it has already been. Both are worth seeing
+   at a glance when picking what to ask next. */
+.menu-item.current {
+  border-color: var(--gold);
+  background: #1c2a48;
+}
+
+/* Dimmed once it has been used -- but never the one that is up, which has to
+   stay the most legible line on the screen. */
+.menu-item.asked:not(.current) .menu-text {
+  color: #94a3b8;
+}
+
+.menu-key {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+}
+
+.menu-item.current .menu-key {
+  color: var(--gold);
+}
+
+.menu-text {
+  color: #e2e8f0;
+  font-size: clamp(0.95rem, 1.6vw, 1.35rem);
+  line-height: 1.35;
+}
+
+.menu-note {
+  color: #64748b;
+  font-size: clamp(0.75rem, 1.1vw, 0.95rem);
+  white-space: nowrap;
+}
+
+.menu-hint {
+  margin: 1rem 0 0;
+  color: #475569;
+  font-size: clamp(0.8rem, 1.1vw, 1rem);
+}
+
+.menu-hint kbd {
+  font: inherit;
+  border: 1px solid #334155;
+  border-radius: 0.25rem;
+  padding: 0 0.3rem;
+}
+
+/* choice + rank bars */
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4vh;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem 1rem;
+  align-items: center;
+}
+
+.bar-label {
+  grid-column: 1 / -1;
+  font-size: clamp(1rem, 1.7vw, 1.6rem);
+  color: #cbd5e1;
+}
+
+.bar-track {
+  height: clamp(1.4rem, 3.2vh, 2.6rem);
+  background: #1e293b;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+
+.bar-row.correct .bar-fill {
+  background: var(--good);
+}
+
+.bar-row.correct .bar-label::after {
+  content: " ✓";
+  color: var(--good);
+  font-weight: 700;
+}
+
+.bar-value {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1rem, 1.7vw, 1.6rem);
+  color: #94a3b8;
+  min-width: 5rem;
+  text-align: right;
+}
+
+/* word cloud */
+
+.cloud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em 0.7em;
+  padding: 1rem;
+}
+
+.cloud span {
+  line-height: 1.05;
+  font-weight: 700;
+}
+
+/* columns: scale and histogram */
+
+.columns {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(0.3rem, 1vw, 1.2rem);
+  height: 100%;
+  padding-bottom: 2.5rem;
+  position: relative;
+}
+
+.column {
+  flex: 1;
+  max-width: 7rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+}
+
+.column .count {
+  color: #94a3b8;
+  font-size: clamp(0.8rem, 1.4vw, 1.3rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.column .stalk {
+  width: 100%;
+  background: #2563eb;
+  border-radius: 6px 6px 0 0;
+  min-height: 2px;
+  transition: height 0.4s ease;
+}
+
+.column .tick {
+  margin-top: 0.4rem;
+  color: #cbd5e1;
+  font-size: clamp(0.75rem, 1.3vw, 1.2rem);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.summary {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  margin-top: 2vh;
+  color: #94a3b8;
+  font-size: clamp(0.95rem, 1.6vw, 1.5rem);
+}
+
+.summary strong {
+  color: #fff;
+}
+
+.summary .actual strong {
+  color: var(--good);
+}
+
+.ends {
+  display: flex;
+  justify-content: space-between;
+  color: #64748b;
+  font-size: clamp(0.85rem, 1.4vw, 1.3rem);
+  margin-top: 0.5rem;
+}
+
+/* control bar */
+
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgb(2 6 23 / 0.92);
+  border-top: 1px solid #1e293b;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.bar.shown {
+  opacity: 1;
+  transform: none;
+}
+
+.bar button {
+  background: rgb(255 255 255 / 0.08);
+  border-color: rgb(255 255 255 / 0.2);
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.bar .spacer {
+  flex: 1;
+}
+
+.pill {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+}
+
+.pill.open {
+  color: var(--good);
+}
+
+.pill.keys {
+  color: #475569;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 60rem) {
+  .pill.keys {
+    display: none;
+  }
+}

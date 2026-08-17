@@ -1,0 +1,52 @@
+{% extends "base.html" %} {% block title %}Poll{% endblock %} {% block bodyclass
+%}display{% endblock %} {% block content %}
+<main id="stage">
+  <section class="join" id="join">
+    <h1 class="deck-title" id="deck-title">No poll loaded</h1>
+    <p class="join-lead">To answer, go to</p>
+    <p class="join-url" id="join-url">connecting…</p>
+    <p class="join-lead">and enter</p>
+    <p class="join-code">{{ code }}</p>
+    <img class="join-qr" id="join-qr" alt="" hidden />
+    <p class="here" id="join-here"></p>
+    <p class="join-live" id="join-live" hidden></p>
+  </section>
+
+  <section class="asked" id="asked" hidden>
+    <header>
+      <span class="counter" id="counter"></span>
+      <h1 class="q-text" id="q-text"></h1>
+    </header>
+    <div class="results" id="results"></div>
+    <p class="waiting" id="waiting" hidden></p>
+  </section>
+
+  <section class="menu" id="menu" hidden>
+    <h2 class="menu-title">Questions</h2>
+    <ol class="menu-list" id="menu-list"></ol>
+    <p class="menu-hint">
+      Click one, or press its number. Esc or <kbd>m</kbd> to close.
+    </p>
+  </section>
+</main>
+
+<div class="bar" id="bar">
+  <span class="pill" id="status"></span>
+  <span class="pill" id="tally"></span>
+  <span class="spacer"></span>
+  <span class="pill keys">m menu · space next · ← back · o open · h results · r reveal · j join</span>
+  <button type="button" id="prev">◀</button>
+  <button type="button" id="next">▶</button>
+  <button type="button" id="menu-button">Questions</button>
+  <button type="button" id="join-screen">Join screen</button>
+  <button type="button" id="toggle-open">Close voting</button>
+  <button type="button" id="toggle-results">Show results</button>
+  <button type="button" id="reveal">Reveal answer</button>
+  <button type="button" id="save">Save CSV</button>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  window.DISPLAY_KEY = "{{ key }}";
+</script>
+<script src="/static/display.js"></script>
+{% endblock %}
