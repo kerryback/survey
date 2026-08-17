@@ -174,13 +174,20 @@ function drawMenu(s) {
     const note = item.responses ? `${item.type} · ${item.responses} answered` : item.type;
     row.append(el("span", "menu-note", note));
 
-    row.addEventListener("click", () => {
-      state.showMenu = false;
-      state.showJoin = false;
-      send({ type: "goto", index: item.index });
-    });
+    row.addEventListener("click", () => pick(item.index));
     list.append(row);
   });
+}
+
+// Take the menu down on this projector before asking the server for the
+// question, rather than after. Waiting for the broadcast to come back leaves the
+// menu sitting on the wall for a round trip, which on classroom wifi is long
+// enough to look like the click missed.
+function pick(index) {
+  state.showMenu = false;
+  state.showJoin = false;
+  if (state.current) render(state.current);
+  send({ type: "goto", index });
 }
 
 function toggleMenu() {
@@ -372,12 +379,10 @@ document.addEventListener("keydown", (event) => {
   // nothing, so this doesn't cost any other key its job.
   if (state.showMenu && /^[1-9]$/.test(event.key)) {
     const wanted = Number(event.key) - 1;
-    const item = (state.current.menu || [])[wanted];
+    const item = ((state.current && state.current.menu) || [])[wanted];
     if (item) {
       event.preventDefault();
-      state.showMenu = false;
-      state.showJoin = false;
-      send({ type: "goto", index: item.index });
+      pick(item.index);
       showBar();
     }
     return;

@@ -158,7 +158,12 @@ class Session:
 
         if kind == "rank":
             size = len(question["options"])
-            ok = isinstance(value, list) and sorted(value) == list(range(size))
+            # The isinstance check earns its place: sorted() on a mixed-type list
+            # raises, and a raise here drops the student's connection instead of
+            # telling them the answer didn't fit.
+            if not isinstance(value, list) or not all(isinstance(v, int) for v in value):
+                return False, None
+            ok = sorted(value) == list(range(size))
             return ok, list(value) if ok else None
 
         return False, None
@@ -254,14 +259,22 @@ class Session:
         for ws in list(self.displays):
             await self._send(ws, state, self.displays)
         for participant, ws in list(self.voters.items()):
-            await self._send(ws, self.voter_state(participant))
+            if not await self._send(ws, self.voter_state(participant)):
+                # A phone that dropped without a clean close would otherwise sit
+                # in the dict being written to on every answer for the rest of
+                # class. Its handler will tidy up when the TCP timeout finally
+                # lands; this stops the wasted sends in the meantime.
+                if self.voters.get(participant) is ws:
+                    self.voters.pop(participant, None)
 
-    async def _send(self, ws: Any, message: dict[str, Any], bucket: set[Any] | None = None) -> None:
+    async def _send(self, ws: Any, message: dict[str, Any], bucket: set[Any] | None = None) -> bool:
         try:
             await ws.send_json(message)
+            return True
         except Exception:
             if bucket is not None:
                 bucket.discard(ws)
+            return False
 
     async def add_display(self, ws: Any) -> None:
         self.displays.add(ws)
