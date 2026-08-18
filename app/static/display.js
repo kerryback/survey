@@ -223,7 +223,14 @@ function barRow(label, fraction, value, correct) {
   return row;
 }
 
+// Select one is a pie: the options are the whole of what the room said, and a
+// pie shows that as one shape rather than asking anyone to add bars up. Select
+// all is not -- there the pieces do not make a whole, so it stays bars.
 function drawChoice(box, question, results, revealed) {
+  if (!results.multi) {
+    drawPie(box, question, results, revealed);
+    return;
+  }
   const bars = el("div", "bars");
   const correct = new Set(revealed ? results.answer || [] : []);
   results.options.forEach((option, index) => {
@@ -241,6 +248,77 @@ function drawChoice(box, question, results, revealed) {
       summary([["Select all — % of the", `${results.responses} who answered`]])
     );
   }
+}
+
+
+// --- the pie ---------------------------------------------------------------
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+const PIE_COLOURS = [
+  "#93c5fd", "#fbbf24", "#86efac", "#c4b5fd",
+  "#fca5a5", "#67e8f9", "#fdba74", "#f8fafc",
+];
+
+function svgEl(tag, attrs) {
+  const node = document.createElementNS(SVG_NS, tag);
+  Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+  return node;
+}
+
+function slicePath(cx, cy, r, startDeg, endDeg) {
+  const point = (deg) => {
+    const a = (deg * Math.PI) / 180;
+    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  };
+  const [x1, y1] = point(startDeg);
+  const [x2, y2] = point(endDeg);
+  const large = endDeg - startDeg > 180 ? 1 : 0;
+  return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+}
+
+function drawPie(box, question, results, revealed) {
+  if (!results.responses) {
+    box.append(el("p", "waiting", "Waiting for answers…"));
+    return;
+  }
+
+  const wrap = el("div", "pie-wrap");
+  const svg = svgEl("svg", { viewBox: "0 0 100 100", class: "pie" });
+  const correct = new Set(revealed ? results.answer || [] : []);
+  // Start at twelve o'clock and go clockwise, which is the direction everyone
+  // reads a pie in.
+  let angle = -90;
+
+  results.options.forEach((option, index) => {
+    if (!option.count) return;
+    const colour = PIE_COLOURS[index % PIE_COLOURS.length];
+    const sweep = option.share * 360;
+    // A lone option taking every vote is a full circle, and an arc from a point
+    // back to itself draws nothing at all.
+    const shape =
+      sweep >= 359.99
+        ? svgEl("circle", { cx: 50, cy: 50, r: 46, fill: colour })
+        : svgEl("path", { d: slicePath(50, 50, 46, angle, angle + sweep), fill: colour });
+    if (correct.has(index)) shape.setAttribute("class", "correct");
+    svg.append(shape);
+    angle += sweep;
+  });
+
+  const legend = el("div", "pie-legend");
+  results.options.forEach((option, index) => {
+    const row = el("div", "pie-key" + (correct.has(index) ? " correct" : ""));
+    const swatch = el("span", "pie-swatch");
+    swatch.style.background = PIE_COLOURS[index % PIE_COLOURS.length];
+    if (!option.count) swatch.classList.add("empty");
+    row.append(swatch);
+    row.append(el("span", "pie-name", option.text));
+    row.append(el("span", "pie-pct", `${Math.round(option.share * 100)}%`));
+    legend.append(row);
+  });
+
+  wrap.append(svg, legend);
+  box.append(wrap);
 }
 
 function drawCloud(box, question, results) {
@@ -328,19 +406,41 @@ function drawNumber(box, question, results) {
 }
 
 function drawRank(box, question, results) {
-  const bars = el("div", "bars");
-  const size = results.rows.length;
-  results.rows.forEach((row) => {
-    if (row.average === null) {
-      bars.append(barRow(row.text, 0, "—"));
-      return;
-    }
-    // A lower average position is better, so invert it for the bar length.
-    const fraction = (size + 1 - row.average) / size;
-    bars.append(barRow(row.text, fraction, `avg ${pretty(row.average)}`));
+  if (!results.complete) {
+    box.append(el("p", "waiting", "Waiting for answers…"));
+    return;
+  }
+
+  // Categories across, ranks down, colour by how much of the room put that
+  // category in that position. The average alone would say "third" for an
+  // option everybody ranked third and for one split between first and fifth,
+  // which are opposite findings about the room.
+  const options = results.options || [];
+  const grid = el("div", "heat");
+  grid.style.gridTemplateColumns = `auto repeat(${options.length}, minmax(0, 1fr))`;
+
+  grid.append(el("div", "heat-corner", ""));
+  options.forEach((text) => grid.append(el("div", "heat-head", text)));
+
+  results.heat.forEach((row) => {
+    grid.append(el("div", "heat-rank", ordinal(row.rank)));
+    row.cells.forEach((cell) => {
+      const box = el("div", "heat-cell", cell.share ? `${Math.round(cell.share * 100)}%` : "");
+      // Floor the alpha so a cell with a couple of votes still reads as warm
+      // rather than as empty, and keep the text light on the darkest cells.
+      box.style.background = `rgba(59, 130, 246, ${cell.share ? 0.18 + cell.share * 0.82 : 0})`;
+      if (cell.share >= 0.55) box.classList.add("strong");
+      grid.append(box);
+    });
   });
-  box.append(bars);
-  box.append(summary([["complete rankings", String(results.complete)]]));
+
+  box.append(grid);
+  box.append(summary([["of the", `${results.complete} who ranked`]]));
+}
+
+function ordinal(n) {
+  const suffix = ["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th";
+  return `${n}${suffix}`;
 }
 
 // --- controls --------------------------------------------------------------

@@ -444,6 +444,128 @@ body.display .q-text {
   padding: 0 0.3rem;
 }
 
+/* the pie, for select-one
+
+   Sized against the viewport height rather than a fixed rem, so it fills a
+   projector without spilling off a laptop screen. */
+
+.pie-wrap {
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.5rem, 5vw, 5rem);
+  flex-wrap: wrap;
+}
+
+.pie {
+  width: clamp(16rem, 54vh, 34rem);
+  height: clamp(16rem, 54vh, 34rem);
+  flex: none;
+}
+
+/* Thin dark gaps between slices, so two similar colours never merge into one
+   wedge when seen from the back of a room. */
+.pie path,
+.pie circle {
+  stroke: #0f172a;
+  stroke-width: 0.8;
+}
+
+.pie .correct {
+  stroke: var(--good);
+  stroke-width: 2.4;
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1.2vh, 1rem);
+}
+
+.pie-key {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: clamp(1rem, 2.1vw, 1.9rem);
+}
+
+.pie-swatch {
+  width: 1em;
+  height: 1em;
+  border-radius: 0.25em;
+}
+
+.pie-swatch.empty {
+  opacity: 0.25;
+}
+
+.pie-name {
+  color: #e2e8f0;
+}
+
+.pie-pct {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  justify-self: end;
+}
+
+.pie-key.correct .pie-name {
+  color: var(--good);
+}
+
+/* the rank heatmap
+
+   Categories across, ranks down, colour by how much of the room put that
+   category in that position. */
+
+.heat {
+  margin: auto;
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 70rem;
+}
+
+.heat-head {
+  color: #cbd5e1;
+  font-size: clamp(0.8rem, 1.5vw, 1.3rem);
+  line-height: 1.2;
+  text-align: center;
+  align-self: end;
+  padding-bottom: 0.3rem;
+}
+
+.heat-rank {
+  color: #94a3b8;
+  font-size: clamp(0.8rem, 1.4vw, 1.2rem);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  padding-right: 0.6rem;
+}
+
+.heat-cell {
+  display: grid;
+  place-items: center;
+  min-height: clamp(2.4rem, 9vh, 5.5rem);
+  border-radius: 0.4rem;
+  /* An outline on every cell, so the ones nobody chose still read as part of
+     the grid rather than as a hole in it. */
+  outline: 1px solid #1e293b;
+  color: #93c5fd;
+  font-size: clamp(0.85rem, 1.7vw, 1.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.4s ease;
+}
+
+.heat-cell.strong {
+  color: #0f172a;
+}
+
 /* choice + rank bars */
 
 .bars {

@@ -170,23 +170,53 @@ def _rank(question: dict[str, Any], answers: list[Any]) -> dict[str, Any]:
     totals = [0.0] * len(options)
     counted = [0] * len(options)
 
+    # grid[rank][option] -- how many people put this option in this position.
+    size = len(options)
+    grid = [[0] * size for _ in range(size)]
+    complete = 0
+
     for answer in answers:
-        if not isinstance(answer, list) or sorted(answer) != list(range(len(options))):
+        if not isinstance(answer, list) or sorted(answer) != list(range(size)):
             continue  # a partial or malformed ordering tells us nothing
+        complete += 1
         for position, option_index in enumerate(answer):
             totals[option_index] += position + 1
             counted[option_index] += 1
+            grid[position][option_index] += 1
 
     rows = [
         {
             "text": options[i],
             "average": round(totals[i] / counted[i], 2) if counted[i] else None,
         }
-        for i in range(len(options))
+        for i in range(size)
     ]
     # Lowest average position first -- that is what "ranked highest" means here.
     rows.sort(key=lambda r: (r["average"] is None, r["average"]))
-    return {"rows": rows, "complete": sum(1 for a in answers if isinstance(a, list))}
+
+    # An average collapses a ranking to one number and hides whether the room
+    # agreed. Two options can average third when one was ranked third by
+    # everybody and the other was split first and fifth, which are opposite
+    # findings. The grid keeps the distribution: how much of the room put each
+    # thing in each position.
+    denominator = complete or 1
+    heat = [
+        {
+            "rank": position + 1,
+            "cells": [
+                {"count": grid[position][i], "share": grid[position][i] / denominator}
+                for i in range(size)
+            ],
+        }
+        for position in range(size)
+    ]
+
+    return {
+        "rows": rows,
+        "options": list(options),
+        "heat": heat,
+        "complete": complete,
+    }
 
 
 def tally(question: dict[str, Any], answers: list[Any]) -> dict[str, Any]:
