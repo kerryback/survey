@@ -2,7 +2,7 @@
 
 Live in-class polling at a fixed public address. The instructor drives a
 full-screen display on the classroom computer; students answer from their own
-phones at <https://survey.kerryback.com>.
+phones at <https://poll.kerryback.com>.
 
 Anonymous by design: no name field, no roster, no sign-in, nothing stored that
 could identify who said what.
@@ -92,7 +92,7 @@ push to `main`.
 | variable | |
 | --- | --- |
 | `SURVEY_TOKEN` | instructor API token (a Koyeb secret) |
-| `PUBLIC_URL` | `https://survey.kerryback.com` — what the QR encodes |
+| `PUBLIC_URL` | `https://poll.kerryback.com` — what the QR encodes |
 | `SURVEY_CODE` | optional; pins the room code instead of a fresh one per session |
 | `PORT` | injected by Koyeb |
 

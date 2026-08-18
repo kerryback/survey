@@ -1,7 +1,7 @@
 """Live in-class polling, at a fixed public address.
 
 The instructor drives a full-screen display on the classroom computer; students
-answer from their own phones at https://survey.kerryback.com. Answers are
+answer from their own phones at https://poll.kerryback.com. Answers are
 anonymous: there is no name field, no roster, and nothing stored that could
 identify who said what.
 
