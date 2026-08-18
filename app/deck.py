@@ -34,7 +34,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-TYPES = ("choice", "wordcloud", "scale", "number", "rank")
+TYPES = ("choice", "multi", "wordcloud", "scale", "number", "rank")
 
 MAX_OPTIONS = 10
 MAX_QUESTIONS = 100
@@ -95,8 +95,22 @@ def _check_number(q: dict[str, Any], problems: list[str], where: str) -> None:
     q["unit"] = str(q.get("unit", ""))
 
 
+def _check_multi(q: dict[str, Any], problems: list[str], where: str) -> None:
+    """Select all that apply.
+
+    A type of its own rather than a flag on `choice`, because that is how an
+    instructor thinks of it and how it reads back in a poll file six months
+    later. Underneath it is still a choice question -- one code path runs the
+    room -- so everything downstream sees `choice` with `multi` set.
+    """
+    q["type"] = "choice"
+    q["multi"] = True
+    _check_choice(q, problems, where)
+
+
 CHECKS = {
     "choice": _check_choice,
+    "multi": _check_multi,
     "rank": _check_rank,
     "scale": _check_scale,
     "number": _check_number,

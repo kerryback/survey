@@ -171,7 +171,8 @@ function drawMenu(s) {
     const key = item.index < 9 ? String(item.index + 1) : "";
     row.append(el("span", "menu-key", key));
     row.append(el("span", "menu-text", item.text));
-    const note = item.responses ? `${item.type} · ${item.responses} answered` : item.type;
+    const kind = item.multi ? "select all" : item.type;
+    const note = item.responses ? `${kind} · ${item.responses} answered` : kind;
     row.append(el("span", "menu-note", note));
 
     row.addEventListener("click", () => pick(item.index));
@@ -232,6 +233,14 @@ function drawChoice(box, question, results, revealed) {
     );
   });
   box.append(bars);
+  // Percentages are of respondents, so on a select-all they add to more than
+  // 100. Say so once on the screen rather than letting the room do the
+  // arithmetic and conclude the chart is broken.
+  if (results.multi && results.responses) {
+    box.append(
+      summary([["Select all — % of the", `${results.responses} who answered`]])
+    );
+  }
 }
 
 function drawCloud(box, question, results) {

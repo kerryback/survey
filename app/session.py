@@ -218,6 +218,7 @@ class Session:
             {
                 "index": position,
                 "type": item["type"],
+                "multi": bool(item.get("multi")),
                 "text": item["text"],
                 "responses": len(self.responses[position]),
                 "asked": bool(self.responses[position]) or position == self.index,

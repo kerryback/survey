@@ -34,7 +34,8 @@ Opinion questions have nothing to bias, so they draw live.
 
 | type | students see | projector shows |
 | --- | --- | --- |
-| `choice` | tappable options, A/B/C | bar per option, correct one green when revealed |
+| `choice` | tappable options, A/B/C | a bar per option, as % of the people who answered |
+| `multi` | the same, tick any number, then Submit | a bar per option, as % of the people who answered — so they add to more than 100% |
 | `wordcloud` | a text box | answers sized by how many said them |
 | `scale` | a row of numbers | distribution plus the mean |
 | `number` | a number box | histogram, mean, median, true answer marked |

@@ -92,13 +92,21 @@ def _choice(question: dict[str, Any], answers: list[Any]) -> dict[str, Any]:
             if isinstance(value, int) and 0 <= value < len(options):
                 counts[value] += 1
 
-    total = sum(counts) or 1
+    # Share is of respondents, not of picks. For a single-choice question the
+    # two are the same number. For select-all they are not, and respondents is
+    # the one that answers the question being asked: "what fraction of the room
+    # picked this?" Dividing by picks would instead say what fraction of all
+    # ticks landed here, which drops as students tick more boxes and means
+    # nothing to anyone reading it off a projector. The consequence is that
+    # select-all percentages add to more than 100, which is correct.
+    total = len(answers) or 1
     return {
         "options": [
             {"text": text, "count": count, "share": count / total}
             for text, count in zip(options, counts)
         ],
         "answer": question.get("answer") or [],
+        "multi": bool(question.get("multi")),
     }
 
 
