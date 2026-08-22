@@ -11,17 +11,22 @@ random hostnames on a domain that campus filters have good reason to block, plus
 a cold start every class. A permanent hostname on a domain the instructor owns
 has neither problem.
 
-One session at a time, held in memory. Nothing is persisted, so a redeploy or an
-instance restart loses the class -- the CSV is the only durable artifact and the
-instructor pulls it down at the end.
+One session at a time, held in memory. Nothing is persisted and nothing can be
+downloaded, so a redeploy or an instance restart loses the class and there is no
+history anywhere afterwards. That is the point rather than a limitation: the
+anonymity is a property of the system, not a promise about how the data is
+handled.
 
-Two credentials, neither of them a login:
+Three credentials, none of them a login:
 
   SURVEY_TOKEN   the instructor's, sent as a bearer header by the CLI. It never
                  appears in a URL, so it cannot leak through browser history or
                  a screen-shared address bar.
   display_key    minted per session, in the /display URL. Scoped to the session
                  so that a key read off the projector dies with the class.
+  display_code   the same door for a podium keyboard: six digits, typed at
+                 /display and traded for the key. Guessing it is rate-limited,
+                 and it is never drawn on the projector it opens.
 
 Students are gated by the room code, which is on the projector and not in the
 URL -- enough that a forwarded link doesn't let the internet vote.
@@ -32,6 +37,7 @@ from __future__ import annotations
 import io
 import os
 import secrets
+import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -42,7 +48,7 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import deck as deck_mod, results, tally
+from . import deck as deck_mod, tally
 from .session import Session
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -50,6 +56,11 @@ BASE_DIR = Path(__file__).resolve().parent
 PUBLIC_URL = (os.environ.get("PUBLIC_URL") or "").rstrip("/")
 TOKEN = os.environ.get("SURVEY_TOKEN") or ""
 FIXED_CODE = (os.environ.get("SURVEY_CODE") or "").strip()
+
+# Wrong display codes before the door pauses, and how long it stays shut. Ten is
+# far above a podium typo and far below a useful search of six digits.
+DISPLAY_TRIES = 10
+DISPLAY_PAUSE = 60.0
 
 # One classroom at a time. None until the instructor starts one, which is what
 # makes the student page say "nothing is running" instead of offering a code box
@@ -97,6 +108,30 @@ def _require_display_key(key: str) -> Session:
     return live
 
 
+def _display_by_code(given: str) -> tuple[Session | None, str]:
+    """Trade the six-digit code for the session it opens.
+
+    Returns (session, problem); exactly one of them is filled in. Wrong codes
+    are counted and shut the door for a minute once there have been enough of
+    them, which is what keeps a six-digit secret worth having -- ten tries a
+    minute against 900,000 codes is not a search anybody finishes during class.
+    """
+    live = SESSION
+    if live is None:
+        return None, "No session is running."
+    now = time.monotonic()
+    if now < live.display_blocked_until:
+        return None, "Too many wrong codes. Wait a minute, then try again."
+    if secrets.compare_digest(given.strip(), live.display_code):
+        live.display_tries = 0
+        return live, ""
+    live.display_tries += 1
+    if live.display_tries >= DISPLAY_TRIES:
+        live.display_tries = 0
+        live.display_blocked_until = now + DISPLAY_PAUSE
+    return None, "That code isn't right."
+
+
 def _live() -> Session:
     """The session, for routes that need one to already exist."""
     if SESSION is None:
@@ -126,6 +161,8 @@ def _facts(live: Session) -> dict[str, Any]:
         "room_code": live.code,
         "display_url": f"{PUBLIC_URL or ''}/display?key={live.display_key}",
         "display_key": live.display_key,
+        "display_code": live.display_code,
+        "display_page": f"{PUBLIC_URL or ''}/display",
     }
 
 
@@ -139,12 +176,53 @@ def vote_page(request: Request):
     )
 
 
+def _display_gate(request: Request, problem: str = ""):
+    """The projector's front door: the code box, or word that nothing is on.
+
+    Both states are one page because the podium machine sits on it between
+    classes -- it says "No session running" until there is one, then asks for
+    the code.
+    """
+    return templates.TemplateResponse(
+        request, "display-gate.html",
+        {"running": SESSION is not None, "problem": problem},
+    )
+
+
 @app.get("/display")
 def display_page(request: Request, key: str = ""):
+    """The projector.
+
+    Two ways in, because the machine running Claude is often not the machine at
+    the podium. With `?key=` it opens straight away -- that is the URL the CLI
+    prints and opens by itself. Without one it asks for the display code, which
+    is what a keyboard you would rather not touch can actually type.
+
+    A stale key -- the session it belonged to is over -- gets the front door
+    rather than a 404, so the tab left open on the podium says something true
+    when it is reloaded. A wrong key against a session that is running still
+    gets the 404 everything else here gives an unguessed credential.
+    """
+    if SESSION is None or not key:
+        return _display_gate(request)
     live = _require_display_key(key)
     return templates.TemplateResponse(
         request, "display.html", {"key": live.display_key, "code": live.code}
     )
+
+
+@app.post("/api/display")
+def display_open(payload: dict):
+    """Exchange the display code for the display URL.
+
+    Unauthenticated on purpose: the code in the body is the credential. It
+    answers 200 either way -- the page shows the problem, and a scanner learns
+    nothing from the status line.
+    """
+    live, problem = _display_by_code(str(payload.get("code") or ""))
+    if live is None:
+        return JSONResponse({"ok": False, "error": problem})
+    return JSONResponse({"ok": True, "url": f"/display?key={live.display_key}"})
 
 
 @app.get("/healthz")
@@ -289,7 +367,12 @@ async def validate(payload: dict, authorization: str | None = Header(default=Non
 
 @app.get("/api/state")
 def state(authorization: str | None = Header(default=None)):
-    """Everything about the session, including every tally so far."""
+    """Everything about the session, including every tally so far.
+
+    The only way to read the answers, and only while the session is up: nothing
+    is written down and there is nothing to export. "How did they do on question
+    three" is answered from here, in the room, and not afterwards.
+    """
     _require_token(authorization)
     if SESSION is None:
         return JSONResponse({"running": False})
@@ -302,32 +385,6 @@ def state(authorization: str | None = Header(default=None)):
             for index, question in enumerate(SESSION.deck["questions"])
         ]
     return JSONResponse(snapshot)
-
-
-@app.get("/api/results.csv")
-def results_csv(authorization: str | None = Header(default=None), key: str = ""):
-    """The session as CSV.
-
-    Two ways in, because there are two hands that want it: the CLI carries the
-    bearer token, and the projector's save button can only offer a link, so it
-    passes the display key instead.
-    """
-    if key:
-        _require_display_key(key)
-    else:
-        _require_token(authorization)
-    live = _live()
-    try:
-        body = results.csv_text(live)
-    except ValueError as exc:
-        return JSONResponse({"error": str(exc)}, status_code=400)
-    return Response(
-        body,
-        media_type="text/csv",
-        headers={
-            "Content-Disposition": f'attachment; filename="{results.filename(live)}"'
-        },
-    )
 
 
 @app.get("/api/qr.svg")

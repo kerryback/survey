@@ -1,9 +1,11 @@
 """The live state of a poll: what is on screen, who has answered, and the tally.
 
 One classroom, one session. Nothing is persisted at all -- not while the class
-runs and not after it. The projector is the shared artifact and the CSV is
-pulled down at the end. If the container restarts, the class is gone; that is
-the accepted cost of having no database to keep running.
+runs and not after it, and there is nothing to download. The projector is the
+whole artifact: the room looks at the tally together and then it is gone. If the
+container restarts, the class is gone with it; that is the accepted cost of
+having no database to keep running, and the reason the anonymity is real rather
+than promised.
 
 Two rules here are pedagogy rather than plumbing:
 
@@ -35,6 +37,14 @@ class Session:
         # key read off the projector's address bar is dead the moment the class
         # ends rather than good for every class after it.
         self.display_key = secrets.token_urlsafe(12)
+        # The same door, for a keyboard nobody wants to type sixteen random
+        # characters on: six digits, exchanged for the key at /display. The
+        # instructor gets it from the CLI and it is never drawn on the
+        # projector -- a code on screen is a code the back row can photograph,
+        # and this one drives the deck.
+        self.display_code = f"{secrets.randbelow(900_000) + 100_000}"
+        self.display_tries = 0
+        self.display_blocked_until = 0.0
         self.deck: dict[str, Any] | None = None
         self.index = -1  # -1 is the title screen, before the first question
         self.open = False
@@ -58,7 +68,7 @@ class Session:
 
         Everything appends -- a prepared file and a question typed mid-class go
         into the same growing list. One class is one session, so nothing the
-        instructor types can wipe out answers already given, and the CSV at the
+        instructor types can wipe out answers already given, and the menu at the
         end covers the whole meeting rather than whichever file was loaded last.
         """
         if self.deck is None:

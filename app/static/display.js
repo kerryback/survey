@@ -36,13 +36,13 @@ function connect() {
   ws.onclose = (event) => {
     // 4403 is the server saying this session no longer exists -- it was stopped,
     // or the container restarted and took the room with it. Retrying would be a
-    // projector quietly reconnecting to nothing for the rest of the day, so stop
-    // and say what has to happen instead.
+    // projector quietly reconnecting to nothing for the rest of the day. Hand
+    // back to the front door instead: it says "No session running" while there
+    // is none and asks for the next display code when one starts, so a podium
+    // machine nobody wants to walk over to ends up on the right screen either
+    // way. Any other close is the wifi, and reconnecting is exactly right.
     if (event.code === 4403) {
-      $("#deck-title").textContent = "This display has expired";
-      $("#join-url").textContent = "Ask Claude to start the session again";
-      $("#join-qr").hidden = true;
-      $("#join-here").textContent = "";
+      location.replace("/display");
       return;
     }
     setTimeout(connect, 1500);
@@ -473,13 +473,6 @@ $("#toggle-results").addEventListener("click", () =>
 $("#reveal").addEventListener("click", () =>
   send({ type: "reveal", on: !(state.current && state.current.revealed) })
 );
-
-// The server has no access to the instructor's disk, so this downloads rather
-// than saves. `survey results` is the other way, and the usual one.
-$("#save").addEventListener("click", () => {
-  window.location.href = `/api/results.csv?key=${window.DISPLAY_KEY}`;
-  $("#status").textContent = "Downloading CSV";
-});
 
 document.addEventListener("keydown", (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return;

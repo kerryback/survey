@@ -4,6 +4,13 @@ Live in-class polling at a fixed public address. The instructor drives a
 full-screen display on the classroom computer; students answer from their own
 phones at <https://poll.kerryback.com>.
 
+The display does not have to be the machine running the class. Any browser can
+open <https://poll.kerryback.com/display> and type the session's six-digit
+display code, which is what the skill prints when a session starts. Several
+displays can be open at once and they stay in sync, so the questions can be
+driven from a laptop while the room watches the podium screen. Between sessions
+that page says "No session running" and picks the next one up by itself.
+
 Anonymous by design: no name field, no roster, no sign-in, nothing stored that
 could identify who said what.
 
@@ -54,12 +61,17 @@ tell an unguessed token from a route that was never there.
 | POST | `/api/deck` | add a prepared poll. Body `{"name": "class-4.json", "deck": {...}}` |
 | POST | `/api/validate` | check a poll without loading it |
 | GET | `/api/state` | everything, including every tally so far |
-| GET | `/api/results.csv` | the session as CSV |
 | POST | `/api/reset` | empty the session, keep the room open |
-| POST | `/api/stop` | end the session |
+| POST | `/api/stop` | end the session — every display and phone drops to "No session running" |
 
 The projector page and the QR image take a session-scoped `?key=` instead, so
-the long-lived token never enters a browser URL.
+the long-lived token never enters a browser URL. `POST /api/display` is the one
+route with no credential in the header, because the six-digit code in its body
+is the credential: it trades that code for the display URL, and ten wrong ones
+shut the door for a minute.
+
+There is no export. `/api/state` is the only way to read the answers, and only
+while the session is running.
 
 A poll file:
 
@@ -104,9 +116,11 @@ koyeb services redeploy survey/web
 
 ## What it does not do
 
-Nothing is persisted. One session at a time, held in memory — a redeploy or an
-instance restart loses the class. Don't push on a class day, and pull the CSV
-before stopping if you want it.
+Nothing is persisted and nothing can be downloaded. One session at a time, held
+in memory — a redeploy or an instance restart loses the class, and when a session
+ends its answers are gone. Read a tally off `/api/state` while the class is still
+up if it matters; there is no file, no export and no history. Don't push on a
+class day.
 
 One answer per browser, kept by a random local id. A student can change their
 mind while voting is open. It is not a login and not proof of identity: a
