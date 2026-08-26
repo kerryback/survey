@@ -223,102 +223,31 @@ function barRow(label, fraction, value, correct) {
   return row;
 }
 
-// Select one is a pie: the options are the whole of what the room said, and a
-// pie shows that as one shape rather than asking anyone to add bars up. Select
-// all is not -- there the pieces do not make a whole, so it stays bars.
+// Bars, for select-one as much as select-all. The number on each bar is how
+// many people picked it, not a share: a count is the thing a room can act on
+// ("nine of you") and it needs no arithmetic to read. Bars are scaled to the
+// largest option so the tallest one fills the track -- with a share scale the
+// whole chart is a stub until most of the room has answered.
 function drawChoice(box, question, results, revealed) {
-  if (!results.multi) {
-    drawPie(box, question, results, revealed);
-    return;
-  }
-  const bars = el("div", "bars");
-  const correct = new Set(revealed ? results.answer || [] : []);
-  results.options.forEach((option, index) => {
-    const pct = Math.round(option.share * 100);
-    bars.append(
-      barRow(option.text, option.share, `${option.count} · ${pct}%`, correct.has(index))
-    );
-  });
-  box.append(bars);
-  // Percentages are of respondents, so on a select-all they add to more than
-  // 100. Say so once on the screen rather than letting the room do the
-  // arithmetic and conclude the chart is broken.
-  if (results.multi && results.responses) {
-    box.append(
-      summary([["Select all — % of the", `${results.responses} who answered`]])
-    );
-  }
-}
-
-
-// --- the pie ---------------------------------------------------------------
-
-const SVG_NS = "http://www.w3.org/2000/svg";
-
-const PIE_COLOURS = [
-  "#93c5fd", "#fbbf24", "#86efac", "#c4b5fd",
-  "#fca5a5", "#67e8f9", "#fdba74", "#f8fafc",
-];
-
-function svgEl(tag, attrs) {
-  const node = document.createElementNS(SVG_NS, tag);
-  Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
-  return node;
-}
-
-function slicePath(cx, cy, r, startDeg, endDeg) {
-  const point = (deg) => {
-    const a = (deg * Math.PI) / 180;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  };
-  const [x1, y1] = point(startDeg);
-  const [x2, y2] = point(endDeg);
-  const large = endDeg - startDeg > 180 ? 1 : 0;
-  return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
-}
-
-function drawPie(box, question, results, revealed) {
   if (!results.responses) {
     box.append(el("p", "waiting", "Waiting for answers…"));
     return;
   }
-
-  const wrap = el("div", "pie-wrap");
-  const svg = svgEl("svg", { viewBox: "0 0 100 100", class: "pie" });
+  const bars = el("div", "bars");
   const correct = new Set(revealed ? results.answer || [] : []);
-  // Start at twelve o'clock and go clockwise, which is the direction everyone
-  // reads a pie in.
-  let angle = -90;
-
+  const top = Math.max(1, ...results.options.map((option) => option.count));
   results.options.forEach((option, index) => {
-    if (!option.count) return;
-    const colour = PIE_COLOURS[index % PIE_COLOURS.length];
-    const sweep = option.share * 360;
-    // A lone option taking every vote is a full circle, and an arc from a point
-    // back to itself draws nothing at all.
-    const shape =
-      sweep >= 359.99
-        ? svgEl("circle", { cx: 50, cy: 50, r: 46, fill: colour })
-        : svgEl("path", { d: slicePath(50, 50, 46, angle, angle + sweep), fill: colour });
-    if (correct.has(index)) shape.setAttribute("class", "correct");
-    svg.append(shape);
-    angle += sweep;
+    bars.append(
+      barRow(option.text, option.count / top, String(option.count), correct.has(index))
+    );
   });
-
-  const legend = el("div", "pie-legend");
-  results.options.forEach((option, index) => {
-    const row = el("div", "pie-key" + (correct.has(index) ? " correct" : ""));
-    const swatch = el("span", "pie-swatch");
-    swatch.style.background = PIE_COLOURS[index % PIE_COLOURS.length];
-    if (!option.count) swatch.classList.add("empty");
-    row.append(swatch);
-    row.append(el("span", "pie-name", option.text));
-    row.append(el("span", "pie-pct", `${Math.round(option.share * 100)}%`));
-    legend.append(row);
-  });
-
-  wrap.append(svg, legend);
-  box.append(wrap);
+  box.append(bars);
+  // On a select-all the counts add to more than the number of people. Say so
+  // once rather than letting the room do the arithmetic and conclude the chart
+  // is broken.
+  if (results.multi) {
+    box.append(summary([["Select all — more than one pick each, from", `${results.responses} answering`]]));
+  }
 }
 
 function drawCloud(box, question, results) {
